@@ -55,14 +55,8 @@ contract SupplyChain is Context {
 
   modifier checkValue(uint256 sku) {
     //refund them after pay for item (why it is before, _ checks for logic before func)
-    uint256 _price = items[sku].price;
-    require(msg.value >= _price, "REVERT: Not enough ether"); 
+    require(msg.value >= items[sku].price, "REVERT: Not enough ether"); 
     _;
-   
-    uint256 amountToRefund = msg.value - items[sku].price;
-    (bool isSent,) = payable(_msgSender()).call{value: amountToRefund}(abi.encode(amountToRefund));
-    
-    require(isSent, "Failed to refund Ether");
   }
 
   // For each of the following modifiers, use what you learned about modifiers
@@ -128,6 +122,11 @@ contract SupplyChain is Context {
   //      sure the buyer is refunded any excess ether sent. 
   // 6. call the event associated with this function!
   function buyItem(uint256 sku) public  payable forSale(sku) checkValue(sku) {
+
+    uint256 amountToRefund = msg.value - items[sku].price;
+    (bool isRefund,) = payable(_msgSender()).call{value: amountToRefund}(abi.encode(amountToRefund));
+    
+    require(isRefund, "Failed to refund Ether");
 
     items[sku].buyer = payable(_msgSender());
 
